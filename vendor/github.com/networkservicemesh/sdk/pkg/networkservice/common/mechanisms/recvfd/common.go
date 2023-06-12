@@ -23,7 +23,6 @@ import (
 	"context"
 	"net/url"
 	"os"
-//	"time"
 
 	"github.com/edwarnicke/grpcfd"
 	"github.com/networkservicemesh/api/pkg/api/networkservice/mechanisms/common"
@@ -61,8 +60,6 @@ func recvFDAndSwapInodeToFile(ctx context.Context, fileMap *perConnectionFileMap
 			}
 			// Wait for the file to arrive on the fileCh or the context to expire
 			select {
-			//case <-time.After(3 * time.Second):
-			//	return
 			case <-ctx.Done():
 				err = errors.Wrapf(ctx.Err(), "timeout in recvfd waiting for %s", inodeURLStr)
 				return

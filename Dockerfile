@@ -15,7 +15,7 @@ COPY ./local ./local
 COPY ./internal/imports ./internal/imports
 RUN go build ./internal/imports
 COPY . .
-RUN go build -o /bin/nsmgr .
+RUN go build -mod=vendor -o /bin/nsmgr .
 
 FROM build as test
 CMD go test -test.v ./...

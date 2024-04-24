@@ -83,3 +83,5 @@ through to the point of running nsmgr, you will not be able to attach a debugger
 # Build Docker image compatible with integration testing suite: 
 
 `docker build . -t networkservicemeshci/cmd-nsmgr:master && kind load docker-image networkservicemeshci/cmd-nsmgr:master` 
+
+

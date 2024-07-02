@@ -23,7 +23,7 @@ CMD go test -test.v ./...
 FROM test as debug
 CMD dlv -l :40000 --headless=true --api-version=2 test -test.v ./...
 
-FROM alpine:3.16.2 as runtime
+FROM alpine:3 as runtime
 COPY --from=build /bin/nsmgr /bin/nsmgr
 COPY --from=build /bin/dlv /bin/dlv
 COPY --from=build /bin/grpc-health-probe /bin/grpc-health-probe

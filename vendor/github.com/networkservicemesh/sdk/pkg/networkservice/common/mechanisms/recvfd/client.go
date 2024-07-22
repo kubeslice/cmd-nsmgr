@@ -60,13 +60,12 @@ func (r *recvFDClient) Request(ctx context.Context, request *networkservice.Netw
 	}
 
 	p, ok := peer.FromContext(ctx)
-        if !ok {
-                return conn, nil
-        }
-
-        if p.Addr.Network() != "unix" {
-                return conn, nil
-        }
+	if !ok {
+		return conn, nil
+	}
+	if p.Addr.Network() != "unix" {
+		return conn, nil
+	}
 
 	// Get the fileMap
 	fileMap, _ := r.fileMaps.LoadOrStore(conn.GetId(), &perConnectionFileMap{

@@ -59,13 +59,13 @@ func (r *recvFDServer) Request(ctx context.Context, request *networkservice.Netw
 	p, ok := peer.FromContext(ctx)
 	if ok {
 		if p.Addr.Network() != "unix" {
-	                // For each mechanism recv the FD and Swap the Inode for a file in InodeURL in Parameters
-	                for _, mechanism := range append(request.GetMechanismPreferences(), request.GetConnection().GetMechanism()) {
-		                err := recvFDAndSwapInodeToFile(ctx, fileMap, mechanism.GetParameters(), recv)
-		                if err != nil {
-			               return nil, err
-		                }
-	                }
+			// For each mechanism recv the FD and Swap the Inode for a file in InodeURL in Parameters
+			for _, mechanism := range append(request.GetMechanismPreferences(), request.GetConnection().GetMechanism()) {
+				err := recvFDAndSwapInodeToFile(ctx, fileMap, mechanism.GetParameters(), recv)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 

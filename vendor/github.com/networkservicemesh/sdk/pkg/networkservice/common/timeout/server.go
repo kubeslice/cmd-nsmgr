@@ -35,6 +35,8 @@ import (
 	"github.com/networkservicemesh/api/pkg/api/networkservice"
 
 	"github.com/networkservicemesh/sdk/pkg/networkservice/core/next"
+
+	"github.com/networkservicemesh/sdk/pkg/tools/log"
 )
 
 type timeoutServer struct {
@@ -42,7 +44,8 @@ type timeoutServer struct {
 }
 
 // NewServer - creates a new NetworkServiceServer chain element that implements timeout of expired connections
-//             for the subsequent chain elements.
+//
+//	for the subsequent chain elements.
 func NewServer(ctx context.Context) networkservice.NetworkServiceServer {
 	return &timeoutServer{
 		chainCtx: ctx,
@@ -83,8 +86,11 @@ func (s *timeoutServer) Close(ctx context.Context, conn *networkservice.Connecti
 	_, err := next.Server(ctx).Close(ctx, conn)
 	if !(iserror.Is(err, context.DeadlineExceeded) || iserror.Is(err, context.Canceled)) {
 		if oldCancel, loaded := loadAndDelete(ctx, metadata.IsClient(s)); loaded {
+			log.FromContext(ctx).Infof("timeout_close: clearing ctx")
 			oldCancel()
 		}
+	} else {
+		log.FromContext(ctx).Infof("timeout_close: timer not cleared")
 	}
 	return &empty.Empty{}, err
 }

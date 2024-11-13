@@ -60,13 +60,13 @@ func (r *recvFDClient) Request(ctx context.Context, request *networkservice.Netw
 	}
 
 	p, ok := peer.FromContext(ctx)
-        if !ok {
-                return conn, nil
-        }
+	if !ok {
+		return conn, nil
+	}
 
-        if p.Addr.Network() != "unix" {
-                return conn, nil
-        }
+	if p.Addr.Network() != "unix" {
+		return conn, nil
+	}
 
 	// Get the fileMap
 	fileMap, _ := r.fileMaps.LoadOrStore(conn.GetId(), &perConnectionFileMap{
@@ -89,6 +89,16 @@ func (r *recvFDClient) Close(ctx context.Context, conn *networkservice.Connectio
 	rpcCredentials := grpcfd.PerRPCCredentials(grpcfd.PerRPCCredentialsFromCallOptions(opts...))
 	opts = append(opts, grpc.PerRPCCredentials(rpcCredentials))
 	recv, _ := grpcfd.FromPerRPCCredentials(rpcCredentials)
+
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		return next.Client(ctx).Close(ctx, conn, opts...)
+	} else {
+		if p.Addr.Network() != "unix" {
+			// Call the next Client in the chain
+			return next.Client(ctx).Close(ctx, conn, opts...)
+		}
+	}
 
 	// Get the fileMap
 	fileMap, _ := r.fileMaps.LoadOrStore(conn.GetId(), &perConnectionFileMap{

@@ -18,7 +18,6 @@ package begin
 
 import (
 	"context"
-	"errors"
 
 	"github.com/edwarnicke/serialize"
 	"github.com/networkservicemesh/api/pkg/api/networkservice"
@@ -27,8 +26,6 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/tools/postpone"
 
 	"github.com/networkservicemesh/sdk/pkg/networkservice/core/next"
-	"github.com/networkservicemesh/sdk/pkg/tools/clock"
-	"github.com/networkservicemesh/sdk/pkg/tools/log"
 )
 
 type connectionState int
@@ -37,7 +34,6 @@ const (
 	zero connectionState = iota + 1
 	established
 	closed
-	inDelete
 )
 
 var _ connectionState = zero
@@ -218,24 +214,6 @@ func (f *eventFactoryServer) Close(opts ...Option) <-chan error {
 		default:
 			ctx, cancel := f.ctxFunc()
 			defer cancel()
-			// Check if the latest token in the path has expired.
-			// If the token is still valid, do not close the connection. We could land up in this situation if the
-			// token expiry timer does not get cleared even when the token is refreshed. This could happen when the
-			// conn request during the token refresh time fails, and if the conn close fails and the timer is not stopped.
-			conn := f.request.GetConnection()
-			expirationTimestamp := conn.GetPrevPathSegment().GetExpires()
-			if expirationTimestamp == nil {
-				ch <- errors.New("event factory: expiration for the previous path segment cannot be nil")
-				return
-			}
-			expirationTime := expirationTimestamp.AsTime()
-			timeClock := clock.FromContext(ctx)
-			if expirationTime.After(timeClock.Now()) {
-				log.FromContext(ctx).Errorf("eventFactoryServer: ignoring close")
-				return
-			}
-			log.FromContext(ctx).Errorf("eventFactoryServer: closing conn: %v", f.request.GetConnection())
-			f.state = inDelete
 			_, err := f.server.Close(ctx, f.request.GetConnection())
 			f.afterCloseFunc()
 			ch <- err

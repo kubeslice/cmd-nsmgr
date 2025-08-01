@@ -9,13 +9,16 @@ RUN tar xzvf spire-1.2.2-linux-x86_64-glibc.tar.gz -C /bin --strip=2 spire-1.2.2
 
 
 FROM go as build
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /build
 COPY go.mod go.sum ./
 COPY ./local ./local
 COPY ./internal/imports ./internal/imports
-RUN go build ./internal/imports
+RUN go mod download
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build ./internal/imports
 COPY . .
-RUN go build -mod=vendor -o /bin/nsmgr .
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -mod=vendor -o /bin/nsmgr .
 
 FROM build as test
 CMD go test -test.v ./...
@@ -23,8 +26,9 @@ CMD go test -test.v ./...
 FROM test as debug
 CMD dlv -l :40000 --headless=true --api-version=2 test -test.v ./...
 
-FROM alpine:3.20.1 as runtime
+FROM gcr.io/distroless/static-debian12:nonroot as runtime
 COPY --from=build /bin/nsmgr /bin/nsmgr
 COPY --from=build /bin/dlv /bin/dlv
 COPY --from=build /bin/grpc-health-probe /bin/grpc-health-probe
+USER 65532:65532
 ENTRYPOINT ["/bin/nsmgr"]

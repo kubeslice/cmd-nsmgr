@@ -3,8 +3,9 @@ name: ci
 on:
   push:
     branches:
-      - 'main'
-      - 'release/**'
+      - "main"
+      - "release/**"
+      - feat/**
   pull_request:
 jobs:
   yamllint:
@@ -40,3 +41,24 @@ jobs:
     uses: networkservicemesh/.github/.github/workflows/docker-build-and-test.yaml@main
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
+
+  docker-multiarch-build:
+    if: github.repository != 'networkservicemesh/cmd-template'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build multi-arch images (test only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          target: runtime

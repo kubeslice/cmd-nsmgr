@@ -59,15 +59,13 @@ func (r *recvFDServer) Request(ctx context.Context, request *networkservice.Netw
 	p, ok := peer.FromContext(ctx)
 	if ok {
 		if p.Addr.Network() != "unix" {
-			return next.Server(ctx).Request(ctx, request)
-		}
-	}
-
-	// For each mechanism recv the FD and Swap the Inode for a file in InodeURL in Parameters
-	for _, mechanism := range append(request.GetMechanismPreferences(), request.GetConnection().GetMechanism()) {
-		err := recvFDAndSwapInodeToFile(ctx, fileMap, mechanism.GetParameters(), recv)
-		if err != nil {
-			return nil, err
+			// For each mechanism recv the FD and Swap the Inode for a file in InodeURL in Parameters
+			for _, mechanism := range append(request.GetMechanismPreferences(), request.GetConnection().GetMechanism()) {
+				err := recvFDAndSwapInodeToFile(ctx, fileMap, mechanism.GetParameters(), recv)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 
@@ -101,15 +99,6 @@ func (r *recvFDServer) Close(ctx context.Context, conn *networkservice.Connectio
 		filesByInodeURL:    make(map[string]*os.File),
 		inodeURLbyFilename: make(map[string]*url.URL),
 	})
-
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		return next.Server(ctx).Close(ctx, conn)
-	} else {
-		if p.Addr.Network() != "unix" {
-			return next.Server(ctx).Close(ctx, conn)
-		}
-	}
 
 	// Recv the FD and Swap the Inode for a file in InodeURL in Parameters
 	err := recvFDAndSwapInodeToFile(ctx, fileMap, conn.GetMechanism().GetParameters(), recv)

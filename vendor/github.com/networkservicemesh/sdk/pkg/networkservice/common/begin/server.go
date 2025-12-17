@@ -44,13 +44,6 @@ func (b *beginServer) Request(ctx context.Context, request *networkservice.Netwo
 	}
 	// If some other EventFactory is already in the ctx... we are already running in an executor, and can just execute normally
 	if fromContext(ctx) != nil {
-		eventFactoryServer, found := b.Load(request.GetConnection().GetId())
-		if found {
-			if eventFactoryServer.state == inDelete {
-				log.FromContext(ctx).Infof("event factory server in delete state, reject conn request")
-				return nil, errors.New("connection deletion in progress")
-			}
-		}
 		return next.Server(ctx).Request(ctx, request)
 	}
 	eventFactoryServer, _ := b.LoadOrStore(request.GetConnection().GetId(),
@@ -93,8 +86,8 @@ func (b *beginServer) Close(ctx context.Context, conn *networkservice.Connection
 	}
 	eventFactoryServer, ok := b.Load(conn.GetId())
 	if !ok {
-		log.FromContext(ctx).Infof("BeginServerClose: allowing close to passthrough")
-		return next.Server(ctx).Close(ctx, conn)
+		// If we don't have a connection to Close, just let it be
+		return &emptypb.Empty{}, nil
 	}
 	<-eventFactoryServer.executor.AsyncExec(func() {
 		if eventFactoryServer.state != established || eventFactoryServer.request == nil {
